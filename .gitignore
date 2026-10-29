@@ -1,0 +1,5 @@
+# 3D 模型源文件（GLB 的 JS 副本，未被 index.html 引用，删减仓库体积）
+models/
+.DS_Store
+Thumbs.db
+*.log

@@ -1,0 +1,136 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#f6f3ea">
+<title>听见编钟 · 声音交互 DEMO</title>
+<meta name="description" content="曾侯乙编钟声音交互演示 —— 点击钟体发声，正鼓与侧鼓相差三度；或跟随光点奏完一首曲目。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23fcfbf8'/%3E%3Cpath d='M10 5v4M22 5v4M12 9h8c2 6 1 12-4 17-5-5-6-11-4-17z' stroke='%2326221c' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<!-- 不引外链字体：Google Fonts 在国内会挂起并阻塞渲染（表现为白屏打不开），改用系统字体栈 -->
+<link rel="stylesheet" href="css/style.css?v=21">
+</head>
+<body>
+
+<!-- 背景：楚帛纹样经降饱和、低对比处理，只作平面构成与纸面肌理 -->
+<div class="site-bg" aria-hidden="true">
+  <div class="bg-field"></div>
+  <div class="bg-band bg-band--top"></div>
+  <div class="bg-band bg-band--bottom"></div>
+  <div class="bg-side bg-side--left"></div>
+  <div class="bg-side bg-side--right"></div>
+  <div class="bg-veil"></div>
+  <div class="bg-wash"></div>
+  <div id="bgEcho" class="bg-echo"></div>
+  <div class="bg-grain"></div>
+</div>
+
+<main class="container">
+
+  <header class="ch-head rv">
+    <span class="ch-mark" aria-hidden="true">楚</span>
+    <h2 class="ch-title">听见编钟</h2>
+    <p class="ch-sub">THE SOUND OF BELLS</p>
+    <p class="ch-intro">点击任意钟体发声——正鼓与侧鼓，是相差三度的两个音。或选择一首曲目，循着光点，亲手奏完它。</p>
+  </header>
+
+  <div class="mode-bar rv">
+    <button class="mode-tab on" data-mode="free"><em>MODE 01</em>自由演奏</button>
+    <button class="mode-tab" data-mode="song"><em>MODE 02</em>曲目体验</button>
+  </div>
+
+  <div id="songPanel" class="song-panel hidden rv">
+    <div class="sp-songs">
+      <button class="song-btn on" data-song="chushang">《楚商》<em>商调式 · 含旋宫</em></button>
+      <button class="song-btn" data-song="tianwen">《天问》<em>问天 · 问地 · 叩问</em></button>
+    </div>
+    <div class="sp-transport">
+      <button id="btnFollow" class="t-btn t-main">跟随演奏</button>
+      <button id="btnAuto" class="t-btn">自动演奏</button>
+      <button id="btnStop" class="t-btn">停止</button>
+      <span class="t-progress"><i id="playProg"></i></span>
+      <span id="nowNote" class="now-note">—</span>
+      <button id="btnAssist" class="t-btn t-toggle on" title="跟随演奏超时后是否自动补击">辅助 开</button>
+    </div>
+    <p class="sp-note" id="followHint">跟随演奏：循着脉冲的那件钟敲击即推进，<em>节奏由你掌握</em>。久未击中会补一击提示，连续 3 次后停下等你；不想要补击可关「辅助」。</p>
+  </div>
+
+  <div class="rack-toolbar rv">
+    <div class="side-switch">
+      <span class="side-label">击奏部位</span>
+      <div class="side-tabs">
+        <button class="side-tab on" data-side="front">正鼓</button>
+        <button class="side-tab" data-side="side">侧鼓</button>
+      </div>
+    </div>
+    <p id="sideHint">正鼓：敲击钟体正面中下部，得第一基频</p>
+  </div>
+
+  <div id="rackBox" class="rack-box rv" aria-label="编钟演奏台"></div>
+
+  <div class="sound-controls rv">
+    <div class="sc-wave"><canvas id="waveCanvas" width="260" height="44"></canvas><span>声波</span></div>
+    <div class="sc-vol">
+      <span>VOL</span>
+      <input id="vol" type="range" min="0" max="100" value="80" aria-label="音量">
+    </div>
+    <p class="sc-hint" id="soundHint" hidden></p>
+  </div>
+
+  <section class="notes rv">
+    <p class="notes-kicker">ANNOTATION · 注释与依据</p>
+    <ol>
+      <li><b>构成</b>上层三组钮钟 19 + 中下层五组甬钟 45 + 镈钟 1 ＝ 65 件；分三层八组悬于曲尺形铜木钟架（架长 7.48 m、高 2.65 m），六具佩剑铜人柱与八根圆柱承托。</li>
+      <li><b>定音</b>以姑洗宫为准 —— 中层二组 8 号甬钟正鼓音 256.4 Hz，较现代 A440 低约 35 音分，本页全部音高据此推算。音域 C2（64.8 Hz，下层一组 1 号正鼓）至 D7（2329.1 Hz，上层一组 1 号侧鼓），跨五个八度又一大二度。</li>
+      <li><b>侧鼓</b>谱中侧鼓音用于补正鼓音列所无之音 —— 中层正鼓按五声骨架排列，清角 F4、变宫 B4 皆无，唯赖侧鼓（如中层一组 8 号正鼓商、侧鼓羽曾＝F4；6 号正鼓徵、侧鼓徵角＝B4）。正鼓与侧鼓互补，方凑齐十二半音。</li>
+    </ol>
+  </section>
+
+  <footer class="demo-foot rv">
+    <p class="df-left">提示：按住 Shift 点击 = 临时切换到另一个击奏部位　·　悬停钟体看层组与音律 · 曲目旋律为示意改编，非原谱</p>
+  </footer>
+
+</main>
+
+<div id="toast" class="toast"><b id="toastName"></b><span id="toastInfo"></span></div>
+
+<noscript><p style="color:#26221c;padding:2rem;font-family:sans-serif">本演示需要启用 JavaScript。</p></noscript>
+
+<script src="js/data.js?v=15"></script>
+<script src="js/audio.js?v=15"></script>
+<script src="js/racksvg.js?v=15"></script>
+<script src="js/demo.js?v=15"></script>
+<script>
+/* 嵌入主展厅时：把内容真实高度发给父页面，实现无内部滚动条的整段嵌入 */
+(function(){
+  function report(){
+    var main=document.querySelector('main');
+    if(!main) return;
+    var r=main.getBoundingClientRect();
+    var h=Math.ceil(r.bottom + window.scrollY + 1);
+    if(h>0) parent.postMessage({type:'sound-height',height:h},'*');
+  }
+  window.addEventListener('load', report);
+  window.addEventListener('resize', report);
+  window.addEventListener('message', function(e){
+    if(e.data && e.data.type==='sound-height-request') report();
+  });
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(report);
+  if('ResizeObserver' in window) new ResizeObserver(report).observe(document.querySelector('main'));
+  setTimeout(report,300);
+})();
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
